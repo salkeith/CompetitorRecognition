@@ -1,0 +1,613 @@
+---
+title: "Keith et al 22 - clean_figures"
+author: "LBE"
+date: '2022-06-20'
+output: html_document
+---
+#Setup
+```{r, echo=FALSE}
+library(tidyverse)
+library(ggpubr)
+library(wesanderson)
+library("colorspace")
+
+```
+
+
+#THEMES
+```{r}
+# paper theme
+theme_UH <- theme_classic()+
+    theme(panel.border = element_rect(size=1, fill=NA),
+          axis.text = element_text(family="Arial", size = 10),
+          axis.title = element_text(family="Arial", size = 10),
+          legend.position = "none",
+          title = element_text(family = "Arial", face = "bold", size = 10),
+          plot.title = element_text(hjust = 0.5, vjust = 1))
+```
+
+##Figure 1 - 
+###data
+
+```{r}
+load("./data/Update 3/Fig3_ProximityCategories.RData", verbose =T)
+
+```
+
+###figure
+```{r}
+pal <- wes_palette("Zissou1", 4, type = "continuous")
+pal <- c("#008886", "#2AA77C", "#90C37F", "#E7DD97")
+
+#min 5
+ggplot(prox.plot, aes(x = encounter, y = log(freq), fill = proximity)) +
+  geom_col(position = position_fill(reverse = TRUE)) +
+        #scale_fill_grey(name = "proximity (cm)", labels = c("0-24","25-49","50-74","75-100"),start=1,end=0.25) +
+        labs(y="log(proportion of encounters)") +
+  theme_UH+
+  theme(legend.position = "right")+
+  scale_fill_discrete(type = pal,labels = c("0-24","25-49","50-74","75-100"), name =  "proximity (cm)"  ) + 
+  scale_y_discrete(expand=c(0.01,0))+
+  
+  facet_wrap(~time)
+
+ # ggsave("./figures/Figure2cd.eps", width = 20, height = 10, units = "cm" )
+
+
+# reduced dataset
+aggressive_only <- ggplot(proxS.plot, aes(x = encounter, y = log(freq), fill = proximity)) +
+  geom_col(position = position_fill(reverse = TRUE)) +
+        labs(y="log(proportion of encounters)") +
+  theme_UH+
+  theme(legend.position = "right")+
+  scale_fill_discrete(type = pal,labels = c("0-24","25-49","50-74","75-100"), name =  "proximity (cm)"  ) + 
+  scale_y_discrete(expand=c(0.01,0))+
+  
+  facet_wrap(~time)
+
+# ggsave("../figures/Figure2e.eps", width = 20, height = 10, units = "cm" )
+
+```
+
+
+##Figure 2 - Signalling frequency
+###Data
+```{r}
+load("./data/Update 3/Fig2_SignalProportion.RData", verbose =T)
+
+sig.before5.bs.mean <- sig.before5.bs.mean %>% 
+  mutate(time = "pre-bleaching",
+         type = "min 5")
+sig.before.match.bs.mean <- sig.before.match.bs.mean %>% 
+  mutate(time = "pre-bleaching",
+         type = "matched species") 
+sig.after.match.bs.mean <- sig.after.match.bs.mean %>% 
+  mutate(time = "post-bleaching",
+         type = "matched species") 
+sig.freq <- sig.after5.bs.mean %>% 
+  mutate(time = "post-bleaching",
+         type = "min 5") %>%
+  add_row(sig.before5.bs.mean) %>% 
+  add_row(sig.before.match.bs.mean) %>% 
+   add_row(sig.after.match.bs.mean) 
+
+sig.freq$time <- factor(sig.freq$time, levels = c("pre-bleaching", "post-bleaching"))
+
+#paper colours
+cols_ <- c("#2AA77C", "#E7DD97")
+```
+
+###figure
+```{r}
+cols_ <- c("#EEAA74", "#E97869")
+
+(fig2c <- ggplot(data = subset(sig.freq, type=="min 5"), aes(x=encounter, y=sig.prop, fill = encounter))+
+  geom_point(aes(x=encounter, y=sig.prop), shape = 21, alpha=0.7, size = 3)+
+    geom_boxplot()+
+    labs(y="Signalling proportion", x="Encounter type")+
+    theme_UH+
+    scale_fill_manual(values = cols_)+
+    facet_grid(,vars(time))
+   # ggtitle("Matched species")
+)
+
+#ggsave("../figures/Figure2ab.eps", width = 20, height = 10, units = "cm" )
+
+
+#matched species (SUPP)
+(sig_freq_matched <- ggplot(data = subset(sig.freq, type=="matched species"), aes(x=encounter, y=sig.prop, fill = encounter))+
+  geom_point(aes(x=encounter, y=sig.prop), shape = 21, alpha=0.7, size = 3)+
+    geom_boxplot()+
+    labs(y="Signalling proportion")+
+    theme_UH+
+    theme(axis.title.x = element_blank())+
+    scale_fill_manual(values = cols_)+
+    facet_grid(,vars(time))
+   # ggtitle("Matched species")
+)
+
+
+
+
+```
+#Figure 3
+##data
+
+```{r}
+load("./data/Update 3/Fig3_ChaseDistanceMatch.RData", verbose =T)
+
+chase.match.data.bf <- chase.match.out$full.df %>% 
+  mutate(bleach = "before")
+chase.match.data <-  chase.post.match.out$full.df %>% 
+   mutate(bleach = "after") %>% 
+  add_row(chase.match.data.bf)
+  
+chase.match.data$bleach = factor(chase.match.data$bleach, levels = c("before", "after"))
+```
+## figure
+
+```{r}
+
+#density plot
+(ggplot(data = chase.match.data , aes(x=chase.distance.m, fill=bleach, linetype = bleach))+
+    geom_density(alpha=0.4)+
+    scale_fill_manual(values = c("#52A7CC80", "#525ECC80"))+
+  scale_x_continuous(limits = c(-1,11), expand = c(0,0.05))+
+   scale_y_continuous(limits = c(0,1) , expand = c(0,0.005))+
+    facet_wrap(~encounter)+
+  theme_UH+
+   theme(legend.position = c(0.92,0.85)))
+
+#ggsave("../figures/Figure5.pdf", width = 20, height = 10, units = "cm",  )
+
+
+
+```
+
+
+
+
+##Figure 4
+###Data
+```{r}
+load("./data/Update 4/Fig4_PartialCoefficients_June2022.RData", verbose =T)
+
+```
+
+
+###Figs
+```{r}
+
+#signalling
+(sig_phylo <- ggplot(data = sig.phylo, aes(x=phylo, y=sig.prop))+
+  geom_point()+
+  labs(x="Phylogenetic distance", y= "signalling proportion")+
+  theme_UH+
+  stat_regline_equation()+
+  stat_regline_equation(label.y = 0.7, aes(label = ..adj.rr.label..)))
+
+#chase
+(cv_chase_phylo <- ggplot(data =  chase.phylo2, aes(x=phylo, y=CV))+
+    geom_point()+
+  labs(x="", y= "coefficient of variation (chase distance)")+
+  theme_UH+
+  stat_regline_equation()+
+  stat_regline_equation(label.y = 1.6, aes(label = ..adj.rr.label..)))
+
+#Proximity
+(prox_phylo <- ggplot(data =  prox.phylo2, aes(x=phylo, y=mean.proximity))+
+    geom_point()+
+  labs(x="", y= "mean proximity")+
+    theme_UH+
+  stat_regline_equation()+
+  stat_regline_equation(label.y = 3.0, aes(label = ..adj.rr.label..)))
+
+
+ggarrange(prox_phylo,sig_phylo, cv_chase_phylo, nrow=1, labels = c("a", "b", "c"))
+# ggsave("../figures/Figure4_V2.eps", width = 30, height = 10, units = "cm" )
+```
+
+
+#Sample size figures - SUPP?
+##Proximity data - min 5
+```{r}
+load("../data/Update 3/Fig1_SampleSize_Proximity.RData", verbose =T)
+
+#minimum 5 samples
+
+pre_con_prox_min5 <- proximity.sample.sizes[["cs.prox.min5.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1) 
+
+post_con_prox_min5 <- proximity.sample.sizes[["cs.prox.post.min5.sample.size"]] %>% 
+  mutate(bleach = "post",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1)
+  
+pre_het_prox_min5 <- proximity.sample.sizes[["hs.prox.min5.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))
+
+post_het_prox_min5 <- proximity.sample.sizes[["hs.prox.post.min5.sample.size"]] %>% 
+  mutate(bleach = "post",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))
+  
+prox_min5 <- pre_con_prox_min5 %>% 
+  add_row(post_con_prox_min5) %>% 
+  add_row(pre_het_prox_min5) %>% 
+  add_row(post_het_prox_min5)
+
+prox_min5$bleach <- factor(prox_min5$bleach, levels = c("pre", "post"))
+
+missing_sp_j <- prox_min5 %>% 
+  group_by(bleach) %>% 
+  filter(!sp_i %in% sp_j) %>% 
+  summarise(sp_j = unique(sp_i)) %>% 
+  mutate(sp_i = "vagabundus",
+         Freq = NA) 
+
+missing_sp_i <- prox_min5 %>% 
+  group_by(bleach) %>% 
+  filter(!sp_j %in% sp_i) %>% 
+  summarise(sp_i = unique(sp_j)) %>% 
+  mutate(sp_j = "vagabundus",
+         Freq = NA)
+
+prox_min5.1 <- prox_min5 %>% 
+  add_row(missing_sp_j) %>% 
+  add_row(missing_sp_i) %>% 
+  mutate(bleach = recode(bleach, "pre" = "before",
+                        "post" = "after"))
+
+
+
+```
+###figure
+```{r}
+#generate theme
+theme_sample_size <- theme_classic() +
+  theme(axis.text=element_text(size=10, face = "italic"),
+        axis.text.x = element_text(angle=50, vjust=1, hjust=1),
+        axis.title=element_blank(),
+        panel.border = element_rect(size = 1, fill=NA),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 10),
+        legend.position = "none")
+#plot
+(prox_sample_size_min5 <- ggplot(data=prox_min5.1,
+       aes(x=sp_j, y=sp_i, fill=Freq)) + 
+  geom_tile() + 
+   geom_text(aes(label=Freq), color='white', size=3) + 
+  labs(x="species j", y="species i" ) + 
+     facet_wrap(.~bleach)+
+    scale_fill_continuous_sequential(palette="BluGrn", na.value="white")+
+    theme_sample_size)
+
+   
+```
+##Proximity data - matched
+
+```{r}
+#matched species
+
+pre_con_prox_match <- proximity.sample.sizes[["cs.match.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1) 
+
+post_con_prox_match <- proximity.sample.sizes[["cs.post.match.sample.size"]] %>% 
+  mutate(bleach = "post",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1)
+  
+pre_het_prox_match <- proximity.sample.sizes[["hs.match.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))%>% 
+  filter(sp_i%in%pre_con_prox_match$sp_i & #match hetero and conspec encounters
+          sp_j%in%pre_con_prox_match$sp_j )
+
+post_het_prox_match <- proximity.sample.sizes[["hs.post.match.sample.size"]] %>% 
+  mutate(bleach = "post",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j")) %>% 
+  filter(sp_i%in%post_con_prox_match$sp_i & #match hetero and conspec encounters
+          sp_j%in%post_con_prox_match$sp_j )
+  
+prox_match <- pre_con_prox_match %>% 
+  add_row(post_con_prox_match) %>% 
+  add_row(pre_het_prox_match) %>% 
+  add_row(post_het_prox_match) %>% 
+  mutate(bleach = recode(bleach, "pre" = "before",
+                        "post" = "after"))
+  
+
+prox_match$bleach <- factor(prox_match$bleach, levels = c("before", "after"))
+
+
+```
+
+###figure
+
+```{r}
+#plot
+(prox_sample_size_match <- ggplot(data=prox_match,
+       aes(x=sp_j, y=sp_i, fill=Freq)) + 
+  geom_tile() + 
+   geom_text(aes(label=Freq), color='white', size = 3) + 
+  labs(x="species j", y="species i" ) + 
+     facet_wrap(.~bleach)+
+    scale_fill_continuous_sequential(palette="BluGrn")+
+    theme_sample_size)
+
+#hm this one looks the same? Is this because the matched data is the second step, so I've basically done the same thing as Sal?
+```
+##Signalling data - min 5
+```{r}
+load("../data/Update 3/Fig1_SampleSize_Signal.RData", verbose =T)
+
+#minimum 5 samples
+
+pre_con_sig_min5 <- signalling.sample.sizes[["cs.sig.min5.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1) 
+
+post_con_sig_min5 <- signalling.sample.sizes[["cs.sig.post.min5.sample.size"]] %>% 
+  mutate(bleach = "post",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1)
+  
+pre_het_sig_min5 <- signalling.sample.sizes[["hs.sig.min5.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))
+
+post_het_sig_min5 <- signalling.sample.sizes[["hs.sig,.post.min5.sample.size"]] %>% 
+  mutate(bleach = "post",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))
+  
+sig_min5 <- pre_con_sig_min5 %>% 
+  add_row(post_con_sig_min5) %>% 
+  add_row(pre_het_sig_min5) %>% 
+  add_row(post_het_sig_min5)
+
+sig_min5$bleach <- factor(sig_min5$bleach, levels = c("pre", "post"))
+
+#figure out missing species to make figure matched (w empty rows for missing pairs)
+missing_sp_j_sig <- sig_min5 %>% 
+  group_by(bleach) %>% 
+  filter(!sp_i %in% sp_j) %>% 
+  summarise(sp_j = unique(sp_i)) %>% 
+  mutate(sp_i = "trifascialis",
+         Freq = NA) 
+
+missing_sp_i_sig <- sig_min5 %>% 
+  group_by(bleach) %>% 
+  filter(!sp_j %in% sp_i) %>% 
+  summarise(sp_i = unique(sp_j)) %>% 
+  mutate(sp_j = "trifascialis",
+         Freq = NA)
+
+sig_min5.1 <- sig_min5 %>% 
+  add_row(missing_sp_j_sig) %>% 
+  add_row(missing_sp_i_sig) %>% 
+  mutate(bleach = recode(bleach, "pre" = "before",
+                        "post" = "after"))
+```  
+
+###figure
+```{r}
+
+(sig_sample_size_min5 <- ggplot(data=sig_min5.1,
+       aes(x=sp_j, y=sp_i, fill=Freq)) + 
+  geom_tile() + 
+   geom_text(aes(label=Freq), color='white', size = 2.5) + 
+  labs(x="species j", y="species i" ) + 
+     facet_wrap(.~bleach)+
+    scale_fill_continuous_sequential(palette="BluGrn", na.value="white")+
+    theme_sample_size)
+   
+
+
+```
+
+##Signal data - matched
+
+```{r}
+load("../data/Update 3/Fig1_SampleSize_Signal.RData", verbose =T)
+
+#matched species
+
+pre_con_sig_match <- signalling.sample.sizes[["cs.sig.match.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1) 
+
+post_con_sig_match <- signalling.sample.sizes[["cs.sig.post.match.sample.size"]] %>% 
+  mutate(bleach = "post",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1)
+  
+pre_het_sig_match <- signalling.sample.sizes[["hs.sig.match.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))
+
+post_het_sig_match <- signalling.sample.sizes[["hs.sig.post.match.sample.size"]] %>% 
+  mutate(bleach = "post",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))
+  
+sig_match <- pre_con_sig_match %>% 
+  add_row(post_con_sig_match) %>% 
+  add_row(pre_het_sig_match) %>% 
+  add_row(post_het_sig_match) %>% 
+  mutate(bleach = recode(bleach, "pre" = "before",
+                        "post" = "after"))
+
+sig_match$bleach <- factor(sig_match$bleach, levels = c("before", "after"))
+
+```
+
+###figure
+
+```{r}
+#plot
+(sig_sample_size_match <- ggplot(data=sig_match,
+       aes(x=sp_j, y=sp_i, fill=Freq)) + 
+  geom_tile() + 
+   geom_text(aes(label=Freq), color='white', size = 4) + 
+  labs(x="species j", y="species i" ) + 
+     facet_wrap(.~bleach)+
+    scale_fill_continuous_sequential(palette="BluGrn")+
+    theme_sample_size)
+```
+
+##Chase data - min 5
+```{r}
+load("../data/Update 3/Fig1_SampleSize_Chase.RData", verbose =T)
+
+#minimum 5 samples
+
+pre_con_chase_min5 <- chase.sample.sizes[["cs.chase.min5.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1) 
+
+post_con_chase_min5 <- chase.sample.sizes[["cs.chase.post.min5.sample.size"]] %>% 
+  mutate(bleach = "post",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1)
+  
+pre_het_chase_min5 <- chase.sample.sizes[["hs.chase.min5.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))
+
+post_het_chase_min5 <- chase.sample.sizes[["hs.chase.post.min5.sample.size"]] %>% 
+  mutate(bleach = "post",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))
+  
+chase_min5 <- pre_con_chase_min5 %>% 
+  add_row(post_con_chase_min5) %>% 
+  add_row(pre_het_chase_min5) %>% 
+  add_row(post_het_chase_min5)
+
+chase_min5$bleach <- factor(chase_min5$bleach, levels = c("pre", "post"))
+
+missing_sp_j <- chase_min5 %>% 
+  group_by(bleach) %>% 
+  filter(!sp_i %in% sp_j) %>% 
+  summarise(sp_j = unique(sp_i)) %>% 
+  mutate(sp_i = "trifascialis",
+         Freq = NA) 
+
+missing_sp_i <- chase_min5 %>% 
+  group_by(bleach) %>% 
+  filter(!sp_j %in% sp_i) %>% 
+  summarise(sp_i = unique(sp_j)) %>% 
+  mutate(sp_j = "trifascialis",
+         Freq = NA)
+
+chase_min5.1 <- chase_min5 %>% 
+  add_row(missing_sp_j) %>% 
+  add_row(missing_sp_i) %>% 
+  mutate(bleach = recode(bleach, "pre" = "before",
+                        "post" = "after"))
+  
+
+```
+
+###figure
+```{r}
+#plot
+(chase_sample_size_min5 <- ggplot(data=chase_min5.1,
+       aes(x=sp_j, y=sp_i, fill=Freq)) + 
+  geom_tile() + 
+   geom_text(aes(label=Freq), color='white', size = 3) + 
+  labs(x="species j", y="species i" ) + 
+     facet_wrap(.~bleach)+
+    scale_fill_continuous_sequential(palette="BluGrn", na.value="white")+
+    theme_sample_size)
+   
+```
+##Chase data - matched
+
+```{r}
+#matched species
+
+pre_con_chase_match <- chase.sample.sizes[["cs.chase.match.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1) 
+
+post_con_chase_match <- chase.sample.sizes[["cs.chase.post.match.sample.size"]] %>% 
+  mutate(bleach = "post",
+         sp_j = Var1) %>%
+  rename("sp_i" = Var1)
+  
+pre_het_chase_match <- chase.sample.sizes[["hs.chase.match.sample.size"]] %>% 
+  mutate(bleach = "pre",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j"))%>% 
+  filter(sp_i%in%pre_con_chase_match$sp_i & #match hetero and conspec encounters
+          sp_j%in%pre_con_chase_match$sp_j )
+
+post_het_chase_match <- chase.sample.sizes[["hs.chase.post.match.sample.size"]] %>% 
+  mutate(bleach = "post",
+         Var1=as.character(Var1)) %>% 
+  separate(col = Var1, into = c("sp_i", "sp_j")) %>% 
+  filter(sp_i%in%post_con_chase_match$sp_i & #match hetero and conspec encounters
+          sp_j%in%post_con_chase_match$sp_j )
+  
+chase_match <- pre_con_chase_match %>% 
+  add_row(post_con_chase_match) %>% 
+  add_row(pre_het_chase_match) %>% 
+  add_row(post_het_chase_match) %>% 
+  mutate(bleach = recode(bleach, "pre" = "before",
+                        "post" = "after"))
+
+chase_match$bleach <- factor(chase_match$bleach, levels = c("before", "after"))
+
+
+```
+
+###figure
+
+```{r}
+#plot
+(chase_sample_size_match <- ggplot(data=chase_match,
+       aes(x=sp_j, y=sp_i, fill=Freq)) + 
+  geom_tile() + 
+   geom_text(aes(label=Freq), color='white', size = 4) + 
+  labs(x="species j", y="species i" ) + 
+     facet_wrap(.~bleach)+
+    scale_fill_continuous_sequential(palette="BluGrn")+
+    theme_sample_size)
+
+```
+##Figure X assembly
+
+``` {r}
+bottom <- ggarrange(sig_sample_size_min5, chase_sample_size_min5, labels = c("b) Signalling", "c) Chase"))
+
+ggarrange(prox_sample_size_min5,bottom, ncol = 1, labels = c("a) Proximity"), heights = c(1.5,1))
+
+ggsave("../figures/Figure1_V2.jpg", width = 30, height = 25, units = "cm" )
+```
+##Figure X SUPP assembly
+
+```{r}
+bottom2 <- ggarrange(sig_sample_size_match, chase_sample_size_match, labels = c("b) Signalling", "c) Chase"))
+
+ggarrange(prox_sample_size_match,bottom2, ncol = 1, labels = c("a) Proximity"), heights = c(1.5,1))  
+
+ggsave("../figures/Figure1_SUPP.jpg", width = 30, height = 25, units = "cm" )
+  
+```
